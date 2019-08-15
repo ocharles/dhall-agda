@@ -7,7 +7,7 @@ module Dhall.Shift where
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 open import Data.List using (_∷_)
-open import Data.Nat using (ℕ; _≤?_; suc)
+open import Data.Nat using (ℕ; _≤?_; _+_; suc)
 open import Data.String using (String; _≟_)
 open import Dhall.Syntax.Parsed
 ```
@@ -59,7 +59,7 @@ large as the lower bound:
 ```
 shift _ x _ (v at _) with x ≟ v
 shift d x m (.x at n)     | yes refl with m ≤? n
-shift ↑ x _ (.x at n)     | yes refl | yes _ = x at suc n
+shift ↑ x _ (.x at n)     | yes refl | yes _ = x at (n + 1)
 shift ↓ x _ (.x at 0)     | yes refl | yes _ = x at ℕ.zero
 shift ↓ x _ (.x at suc n) | yes refl | yes _ = x at n
 ```
@@ -104,7 +104,7 @@ variable of the same name in order to avoid shifting the bound variable:
 shift _ x _ (Lambda y _ _) with x ≟ y
 shift d x m (Lambda .x A₀ b₀) | yes refl =
   let A₁ = shift d x m A₀
-      b₁ = shift d x (suc m) b₀
+      b₁ = shift d x (m + 1) b₀
   in Lambda x A₁ b₁
 ```
 
@@ -118,4 +118,28 @@ shift d x m (Lambda y A₀ b₀) | no x≠y =
   let A₁ = shift d x m A₀
       b₁ = shift d x m b₀
   in Lambda y A₁ b₁
+```
+
+Function types also introduce bound variables, so increase the minimum bound
+when descending past such a bound variable:
+
+```
+shift d x m (Pi y e e₁) with x ≟ y
+shift d x m (Pi .x A₀ B₀) | yes refl =
+  let A₁ = shift d x m A₀
+      B₁ = shift d x (m + 1) B₀
+  in Pi x A₁ B₁
+```
+
+Again, the bound variable, `x`, is not in scope for its own type, `A₀`, so do
+not increase the lower bound, `m`, when shifting the bound variable's type.
+
+Descend as normal if the bound variable name does not match:
+
+
+```
+shift d x m (Pi y A₀ B₀) | no x≠y =
+  let A₁ = shift d x m A₀
+      B₁ = shift d x m B₀
+  in Pi x A₁ B₁
 ```

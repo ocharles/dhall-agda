@@ -19,4 +19,5 @@ uniformly referred to with @ notation (so `x` is viewed as `x@0`).
 data Expr : Set where
   _at_ : (v : String) → (i : ℕ) → Expr
   Lambda : (x : String) → (A : Expr) → Expr → Expr
+  Pi : (x : String) → (A₀ : Expr) → Expr → Expr
 ```
