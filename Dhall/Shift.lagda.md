@@ -4,6 +4,7 @@
 ```
 module Dhall.Shift where
 
+open import Data.Maybe using (just; nothing)
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 open import Data.List using (_∷_)
@@ -142,4 +143,42 @@ shift d x m (Pi y A₀ B₀) | no x≠y =
   let A₁ = shift d x m A₀
       B₁ = shift d x m B₀
   in Pi x A₁ B₁
+```
+
+`let` expressions also introduce bound variables, so increase the minimum bound
+when descending past such a bound variable:
+
+```
+shift d x m (Let y A₀ a₀ b₀) with x ≟ y
+shift d x m (Let .x (just A₀) a₀ b₀) | yes refl =
+  let A₁ = shift d x m A₀
+      a₁ = shift d x m a₀
+      b₁ = shift d x (m + 1) b₀
+  in Let x (just A₁) a₁ b₁
+shift d x m (Let .x nothing a₀ b₀)   | yes refl =
+  let a₁ = shift d x m a₀
+      b₁ = shift d x (m + 1) b₀
+  in Let x nothing a₁ b₁
+```
+
+Again, the bound variable, `x`, is not in scope for its own type, `A₀`, so do
+not increase the lower bound, `m`, when shifting the bound variable's type.
+
+Note that Dhall's `let` expressions do not allow recursive definitions so the
+bound variable, `x`, is not in scope for the right-hand side of the assignment,
+`a₀`, so do not increase the lower bound, `m`, when shifting the right-hand side
+of the assignment.
+
+Descend as normal if the bound variable name does not match:
+
+```
+shift d x m (Let y (just A₀) a₀ b₀) | no x≠y =
+  let A₁ = shift d x m A₀
+      a₁ = shift d x m a₀
+      b₁ = shift d x m b₀
+  in Let x (just A₁) a₁ b₁
+shift d x m (Let y nothing a₀ b₀)   | no x≠y =
+  let a₁ = shift d x m a₀
+      b₁ = shift d x m b₀
+  in Let x nothing a₁ b₁
 ```

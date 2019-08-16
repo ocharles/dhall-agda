@@ -4,6 +4,7 @@
 module Dhall.Syntax.Parsed where
 
 open import Data.List using (List; []; _∷_)
+open import Data.Maybe using (Maybe)
 open import Data.Nat using (ℕ; suc)
 open import Data.String using (String)
 open import Relation.Binary.PropositionalEquality using (_≢_)
@@ -20,4 +21,5 @@ data Expr : Set where
   _at_ : (v : String) → (i : ℕ) → Expr
   Lambda : (x : String) → (A : Expr) → Expr → Expr
   Pi : (x : String) → (A₀ : Expr) → Expr → Expr
+  Let : (x : String) → (A₀ : Maybe Expr) → (a₀ : Expr) → (b₀ : Expr) → Expr
 ```
