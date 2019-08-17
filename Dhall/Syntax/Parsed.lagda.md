@@ -1,6 +1,8 @@
 # Parser Syntax
 
 ```
+{-# OPTIONS --sized #-}
+
 module Dhall.Syntax.Parsed where
 
 open import Data.List using (List; []; _∷_)
@@ -8,6 +10,7 @@ open import Data.Maybe using (Maybe)
 open import Data.Nat using (ℕ; suc)
 open import Data.String using (String)
 open import Relation.Binary.PropositionalEquality using (_≢_)
+open import Size
 ```
 
 This module contains the definition of Dhall's syntax, as a result of the
@@ -17,9 +20,9 @@ uniformly referred to with @ notation (so `x` is viewed as `x@0`).
 ## Expr
 
 ```
-data Expr : Set where
-  _at_ : (v : String) → (i : ℕ) → Expr
-  Lambda : (x : String) → (A : Expr) → Expr → Expr
-  Pi : (x : String) → (A₀ : Expr) → Expr → Expr
-  Let : (x : String) → (A₀ : Maybe Expr) → (a₀ : Expr) → (b₀ : Expr) → Expr
+data Expr : {i : Size} → Set where
+  _at_ : {s : Size} → (v : String) → (i : ℕ) → Expr {s}
+  Lambda : ∀{s} → (x : String) → (A : Expr {s}) → Expr {s} → Expr {↑ s}
+  Pi : ∀{s} → (x : String) → (A₀ : Expr {s}) → Expr {s} → Expr {↑ s}
+  Let : ∀{s} → (x : String) → (A₀ : Maybe (Expr {s})) → (a₀ : Expr {s}) → (b₀ : Expr {s}) → Expr {↑ s}
 ```

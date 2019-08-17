@@ -24,7 +24,7 @@ This shift function has the form:
 data Direction : Set where
   ↑ ↓ : Direction
 
-shift : (d : Direction) → (x : String) → (m : ℕ) → (e₀ : Expr) → Expr
+shift : ∀ {i} → (d : Direction) → (x : String) → (m : ℕ) → (e₀ : Expr {i}) → Expr {i}
 ```
 ... where:
 

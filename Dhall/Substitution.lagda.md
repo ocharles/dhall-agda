@@ -2,12 +2,15 @@
 ```
 module Dhall.Substitution where
 
+open import Data.Bool using (Bool)
 open import Data.Maybe using (nothing; just)
 open import Data.Nat using (ℕ) using (_+_) renaming (_≟_ to _≟-ℕ_)
 open import Data.String using (String) renaming(_≟_ to _≟-String_)
 open import Dhall.Syntax.Parsed
 open import Dhall.Shift
 open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.HeterogeneousEquality
+import Relation.Binary.HeterogeneousEquality as H
 open import Relation.Nullary
 ```
 -->
@@ -208,3 +211,26 @@ into sub-expressions in those cases, like this:
     (List x)[x ≔ Bool] = List Bool
 
 The remaining rules are:
+
+
+## Auxiliary Proofs
+
+The following proofs are only used for the Agda implementation.
+
+First, we have a small lemma that demonstrates that substituting a variable into
+an expression doesn't change the size of an expression. For example, in
+
+   λ( x : Bool ) → y
+
+We have
+
+   (λ( x : Bool ) → y)[ y ≔ z ] = λ( x : Bool ) → z
+
+which is the same size as the original term.
+
+```
+postulate var-substition-preserves-size-lemma : ∀ {i j x y n m} → (e₀ : Expr {i}) → (e₁ : Expr {j}) → e₁ ≅ e₀ [ x at n ≔ y at m ] → i ≡ j
+
+var-substition-preserves-size : ∀ {i j x y n m} → (e₀ : Expr {i}) → (e₁ : Expr {j}) → e₁ ≅ e₀ [ x at n ≔ y at m ] → Expr {i}
+var-substition-preserves-size e₀ e₁ is-subs rewrite var-substition-preserves-size-lemma e₀ e₁ is-subs = e₁
+```

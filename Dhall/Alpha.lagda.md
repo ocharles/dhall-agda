@@ -6,12 +6,15 @@ module Dhall.Alpha where
 open import Dhall.Syntax.Parsed
 open import Dhall.Substitution
 open import Dhall.Shift
+import Relation.Binary.PropositionalEquality as Prop
+open import Relation.Binary.HeterogeneousEquality
+open import Data.Maybe using (nothing; just)
 ```
 
 α-normalization is a function of the following form:
 
 ```
-alpha : (t₀ : Expr) → Expr
+alpha : ∀{i} → (t₀ : Expr {i}) → Expr {i}
 ```
 
 ... where:
@@ -65,12 +68,66 @@ alpha (Lambda "_" A₀ b₀) =
 alpha (Lambda x A₀ b₀) =
   let A₁ = alpha A₀
       b₁ = shift ↑ "_" 0 b₀
-      b₂ = b₁ [ x at 0 ≔ ("_" at 0) ]
+      b₂ = var-substition-preserves-size b₁ (b₁ [ x at 0 ≔ "_" at 0 ]) refl
       b₃ = shift ↓ x 0 b₂
       b₄ = alpha b₃
   in Lambda "_" A₁ b₄
 
-alpha (v at i) = {!!}
-alpha (Pi x e e₁) = {!!}
-alpha (Let x A₀ e e₁) = {!!}
+alpha (Pi "_" A₀ B₀) =
+  let A₁ = alpha A₀
+      B₁ = alpha B₀
+  in Pi "_" A₁ B₁
+
+alpha (Pi x A₀ B₀) =
+  let A₁ = alpha A₀
+      B₁ = shift ↑ "_" 0 B₀
+      B₂ = var-substition-preserves-size B₁ (B₁ [ x at 0 ≔ "_" at 0 ]) refl
+      B₃ = shift ↓ x 0 B₂
+      B₄ = alpha B₃
+  in Pi "_" A₁ B₄
+
+alpha (Let "_" (just A₀) a₀ b₀) =
+  let a₁ = alpha a₀
+      A₁ = alpha A₀
+      b₁ = alpha b₀
+  in Let "_" (just A₁) a₁ b₁
+
+alpha (Let x (just A₀) a₀ b₀) =
+  let a₁ = alpha a₀
+      A₁ = alpha A₀
+      b₁ = shift ↑ "_" 0 b₀
+      b₂ = var-substition-preserves-size b₁ (b₁ [ x at 0 ≔ "_" at 0 ]) refl
+      b₃ = shift ↓ "_" 0 b₂
+      b₄ = alpha b₃
+  in Let "_" (just A₁) a₁ b₄
+
+alpha (Let "_" nothing a₀ b₀) =
+  let a₁ = alpha a₀
+      b₁ = alpha b₀
+  in Let "_" nothing a₁ b₁
+
+alpha (Let x nothing a₀ b₀) =
+  let a₁ = alpha a₀
+      b₁ = shift ↑ "_" 0 b₀
+      b₂ = var-substition-preserves-size b₁ (b₁ [ x at 0 ≔ "_" at 0 ]) refl
+      b₃ = shift ↓ "_" 0 b₂
+      b₄ = alpha b₃
+  in Let "_" nothing a₁ b₄
 ```
+
+## Variables
+
+Variables are already in α-normal form:
+
+```
+alpha (x at n) = x at n
+```
+
+If they are free variables then there is nothing to do because α-normalization
+does not affect free variables.  If they were originally bound variables there
+is still nothing to do because would have been renamed to `_` along the way by
+one of the preceding rules.
+
+## Imports
+
+An expression with unresolved imports cannot be α-normalized.
